@@ -67,24 +67,13 @@
             border: 0.5px solid rgba(165, 180, 252, 0.4);
         }
 
+        /* sub header tanpa teka-teki digital dan tanpa aturan pesan */
         .sub {
-            margin-top: 0.7rem;
+            margin-top: 0.5rem;
             color: #94a3b8;
-            font-size: 0.85rem;
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .rule {
-            background: #1e293b60;
-            padding: 0.2rem 0.7rem;
-            border-radius: 20px;
-            font-family: monospace;
             font-size: 0.8rem;
-            color: #facc15;
+            display: flex;
+            justify-content: flex-end;
         }
 
         /* chat 区域 */
@@ -302,8 +291,7 @@
             <span class="ai-badge">✦ 謎語AI ✦</span>
         </div>
         <div class="sub">
-            <span>🧩 teka-teki digital</span>
-            <span class="rule">⚡ setiap pesan → "kode salah"</span>
+            <!-- tidak ada teka-teki digital dan tidak ada aturan pesan -->
         </div>
     </div>
 
@@ -336,8 +324,7 @@
     const sendButton = document.getElementById('sendBtn');
 
     // ----- MORSE JAWABAN UNTUK KODE RAHASIA (93114) -----
-    // Jawaban ini tidak menampilkan angka 93114 di manapun di UI
-    // Morse mewakili "I LOVE YOU"
+    // Morse mewakili "I LOVE YOU" - tidak menampilkan angka 93114 dimanapun di UI
     const morseAnswer = `..
 .-..
 ---
@@ -388,10 +375,7 @@
         messageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
     
-    // ----- LOGIKA UTAMA AI -----
-    // Setiap pesan user diproses: jika pesan === "93114" (kode rahasia) => balas dengan morse
-    // Selain itu => balas "kode salah"
-    // Catatan: Angka 93114 tidak pernah ditampilkan di interface, hanya logika internal.
+    // ----- LOGIKA UTAMA AI (diubah: selain kode rahasia jawab "web ini mungkin masi eror") -----
     function processUserMessage(rawMessage) {
         let message = rawMessage.trim();
         if (message === "") {
@@ -404,12 +388,12 @@
         
         // Periksa apakah pesan adalah kode rahasia "93114"
         if (message === "93114") {
-            // Balas dengan morse (tanpa menyebut angka 93114)
+            // Balas dengan morse (tanpa menyebut angka)
             addMessage('ai', '', true, morseAnswer);
         } 
         else {
-            // Untuk semua pesan lain, jawab "kode salah"
-            addMessage('ai', '❌ kode salah');
+            // Untuk semua pesan lain, jawab sesuai permintaan: "web ini mungkin masi eror"
+            addMessage('ai', 'web ini mungkin masi eror');
         }
     }
     
@@ -525,10 +509,10 @@
         }, 3000);
     }
     
-    // Tidak ada satupun elemen yang menampilkan angka "93114" di UI.
-    // Pesan awal sudah "Halo, semoga beruntung🍀"
-    // Petunjuk hanya: "abjad, nuestro sitio web"
-    // Semua permintaan terpenuhi.
+    // Tidak ada label "teka-teki digital", tidak ada "setiap pesan → kode salah"
+    // Petunjuk hanya "abjad, nuestro sitio web"
+    // Respon selain kode rahasia: "web ini mungkin masi eror" (membingungkan)
+    // Kode rahasia 93114 tetap membalas morse tanpa menyebut angkanya.
 </script>
 </body>
-                </html>
+</html>
