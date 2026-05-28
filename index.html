@@ -138,19 +138,16 @@
             backdrop-filter: blur(4px);
         }
 
-        .morse-block {
-            font-family: 'Courier New', 'SF Mono', monospace;
-            font-weight: 600;
+        .sound-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             background: #0f172a;
-            padding: 0.75rem 1rem;
-            border-radius: 1rem;
-            margin-top: 0.5rem;
-            border-left: 3px solid #facc15;
-            white-space: pre;
-            overflow-x: auto;
-            font-size: 0.9rem;
-            letter-spacing: 1px;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.85rem;
             color: #facc15;
+            border: 1px solid #facc1540;
         }
 
         .timestamp {
@@ -251,6 +248,15 @@
             }
         }
 
+        @keyframes soundWave {
+            0% { opacity: 0.5; transform: scale(1);}
+            100% { opacity: 1; transform: scale(1.1);}
+        }
+
+        .playing {
+            animation: soundWave 0.3s ease-in-out 2;
+        }
+
         @media (max-width: 550px) {
             .puzzle-card {
                 border-radius: 1.8rem;
@@ -310,33 +316,169 @@
     const inputField = document.getElementById('messageInput');
     const sendButton = document.getElementById('sendBtn');
 
-    // Morse untuk kode rahasia (93114) -> I LOVE YOU
-    const morseAnswer = `..
-.-..
----
-...-
-.
--.--
----
-..-`;
+    // --- Morse Code untuk "I LOVE YOU" (dalam bentuk simbol)
+    // Dot (.) = pendek, Dash (-) = panjang
+    const morseSequence = [
+        { char: 'I', pattern: '..' },
+        { char: 'L', pattern: '.-..' },
+        { char: 'O', pattern: '---' },
+        { char: 'V', pattern: '...-' },
+        { char: 'E', pattern: '.' },
+        { char: 'Y', pattern: '-.--' },
+        { char: 'O', pattern: '---' },
+        { char: 'U', pattern: '..-' }
+    ];
 
-    function addMessage(sender, text, isMorse = false, morseRaw = null) {
+    // Audio context & utility
+    let audioCtx = null;
+    let isPlaying = false;
+    let currentTimeout = null;
+
+    // Inisialisasi audio context setelah user gesture (pertama kali ada interaksi)
+    function initAudioContext() {
+        if (audioCtx) return audioCtx;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        return audioCtx;
+    }
+
+    // Memainkan nada dengan durasi tertentu (ms)
+    function playTone(durationMs, frequency = 800, onEnd) {
+        if (!audioCtx) {
+            initAudioContext();
+        }
+        // Resume jika suspended
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume().then(() => {
+                actuallyPlayTone(durationMs, frequency, onEnd);
+            }).catch(() => {});
+        } else {
+            actuallyPlayTone(durationMs, frequency, onEnd);
+        }
+    }
+
+    function actuallyPlayTone(durationMs, frequency, onEnd) {
+        const now = audioCtx.currentTime;
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.frequency.value = frequency;
+        gainNode.gain.setValueAtTime(0.2, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + durationMs / 1000);
+        oscillator.start();
+        oscillator.stop(now + durationMs / 1000);
+        if (onEnd) {
+            setTimeout(onEnd, durationMs);
+        }
+    }
+
+    // Memainkan kode morse dari pattern (string dengan . dan -)
+    function playMorsePattern(pattern, onComplete) {
+        let index = 0;
+        const dotDuration = 120;   // milidetik
+        const dashDuration = 360;  // 3x dot
+        const symbolGap = 40;      // jeda antar sinyal dalam huruf
+        const letterGap = 300;      // jeda antar huruf (lebih panjang)
+
+        function playNextSymbol() {
+            if (index >= pattern.length) {
+                if (onComplete) onComplete();
+                return;
+            }
+            const symbol = pattern[index];
+            let duration = (symbol === '.') ? dotDuration : dashDuration;
+            playTone(duration, 780, () => {
+                index++;
+                // jeda antar simbol (kecuali setelah simbol terakhir)
+                if (index < pattern.length) {
+                    setTimeout(playNextSymbol, symbolGap);
+                } else {
+                    // selesai satu huruf, ada jeda lebih panjang sebelum huruf berikutnya
+                    if (onComplete) onComplete();
+                }
+            });
+        }
+        playNextSymbol();
+    }
+
+    // Memainkan seluruh kalimat morse dengan jeda antar huruf
+    function playFullMorse(sequences, onFinished) {
+        let seqIndex = 0;
+        function playNextLetter() {
+            if (seqIndex >= sequences.length) {
+                if (onFinished) onFinished();
+                return;
+            }
+            const letter = sequences[seqIndex];
+            playMorsePattern(letter.pattern, () => {
+                seqIndex++;
+                // jeda antar huruf (kecuali setelah huruf terakhir)
+                if (seqIndex < sequences.length) {
+                    setTimeout(playNextLetter, 300);
+                } else {
+                    if (onFinished) onFinished();
+                }
+            });
+        }
+        playNextLetter();
+    }
+
+    // Fungsi untuk memutar suara morse rahasia (I LOVE YOU)
+    function playSecretMorseAudio() {
+        if (isPlaying) {
+            // hentikan pemutaran sebelumnya jika ada
+            if (currentTimeout) clearTimeout(currentTimeout);
+            if (audioCtx) {
+                // tidak ada cara langsung stop oscillator, kita hanya abaikan dan buat baru
+            }
+            isPlaying = false;
+        }
+        isPlaying = true;
+        // pastikan audio context aktif (resume)
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().then(() => {
+                playFullMorse(morseSequence, () => {
+                    isPlaying = false;
+                });
+            }).catch(() => {
+                isPlaying = false;
+            });
+        } else if (!audioCtx) {
+            initAudioContext();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume().then(() => {
+                    playFullMorse(morseSequence, () => { isPlaying = false; });
+                }).catch(() => { isPlaying = false; });
+            } else {
+                playFullMorse(morseSequence, () => { isPlaying = false; });
+            }
+        } else {
+            playFullMorse(morseSequence, () => { isPlaying = false; });
+        }
+    }
+
+    // --- Chat UI functions ---
+    function addMessage(sender, text, isSoundMessage = false) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${sender === 'user' ? 'user-msg' : 'ai-msg'}`;
         const bubbleDiv = document.createElement('div');
         bubbleDiv.className = 'bubble';
         
-        if (sender === 'ai' && isMorse && morseRaw) {
-            // Hanya menampilkan teks pembuka dan blok morse, tanpa keterangan tambahan
-            const normalText = document.createTextNode('🎯 Kode rahasia diterima. Inilah jawabannya:\n');
-            bubbleDiv.appendChild(normalText);
-            const preBlock = document.createElement('pre');
-            preBlock.className = 'morse-block';
-            preBlock.textContent = morseRaw;
-            bubbleDiv.appendChild(preBlock);
-            // Tidak ada teks "⌨️ morse · decode menjadi pesan rahasia"
-        } 
-        else {
+        if (sender === 'ai' && isSoundMessage) {
+            // Tampilkan indikator suara tanpa menyebut morse
+            const soundIcon = document.createElement('div');
+            soundIcon.className = 'sound-indicator';
+            soundIcon.innerHTML = '🔊 <span style="font-size:0.8rem;">pesan suara</span>';
+            bubbleDiv.appendChild(soundIcon);
+            // Tambahkan efek animasi untuk menandakan suara diputar (opsional)
+            setTimeout(() => {
+                const indicator = bubbleDiv.querySelector('.sound-indicator');
+                if (indicator) indicator.classList.add('playing');
+                setTimeout(() => {
+                    if (indicator) indicator.classList.remove('playing');
+                }, 500);
+            }, 50);
+        } else {
             bubbleDiv.textContent = text;
         }
         
@@ -353,6 +495,7 @@
         messageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
     
+    // Proses pesan user
     function processUserMessage(rawMessage) {
         let message = rawMessage.trim();
         if (message === "") {
@@ -362,8 +505,12 @@
         
         addMessage('user', message);
         
+        // Kode rahasia: 93114
         if (message === "93114") {
-            addMessage('ai', '', true, morseAnswer);
+            // Tampilkan indikator pesan suara (tanpa teks morse)
+            addMessage('ai', '', true);
+            // Putar suara morse (tanpa memberitahu itu morse)
+            playSecretMorseAudio();
         } 
         else {
             addMessage('ai', 'web ini mungkin masi eror');
@@ -399,22 +546,22 @@
     sendButton.addEventListener('click', handleSend);
     inputField.addEventListener('keypress', onEnterKey);
     
-    const style = document.createElement('style');
-    style.textContent = `
-        .morse-block {
-            white-space: pre-wrap;
-            word-break: break-all;
-            font-size: 1rem;
-            line-height: 1.5;
+    // Pastikan audio context dapat diinisialisasi pada user gesture pertama (kirim pesan)
+    // Tapi kita tidak perlu panggil init dulu, nanti saat playSecretMorseAudio akan otomatis.
+    // Namun agar lebih mulus, ketika pengguna mengirim pesan apa pun, kita bisa "siapkan" audio context tanpa suara.
+    // Tapi tidak wajib, karena play akan memicu resume.
+    // Untuk mencegah error karena autoplay policy, kita bisa menambahkan inisialisasi diam saat klik pertama pada halaman.
+    document.body.addEventListener('click', function initAudioOnFirstClick() {
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(e => console.log);
+        } else if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            audioCtx.suspend(); // jangan langsung bunyi, hanya buat context
         }
-        @media (max-width: 480px) {
-            .morse-block {
-                font-size: 0.8rem;
-            }
-        }
-    `;
-    document.head.appendChild(style);
+        document.body.removeEventListener('click', initAudioOnFirstClick);
+    }, { once: true });
     
+    // Title & style tambahan
     document.title = "ICAN | Misteri Abjad";
     
     function manageChatOverflow() {
@@ -427,44 +574,13 @@
     }
     
     const originalAddMessage = addMessage;
-    window.addMessage = function(sender, text, isMorse, morseRaw) {
-        originalAddMessage(sender, text, isMorse, morseRaw);
+    window.addMessage = function(sender, text, isSound) {
+        originalAddMessage(sender, text, isSound);
         manageChatOverflow();
     };
     addMessage = window.addMessage;
     
-    // Copy morse saat klik
-    document.addEventListener('click', (e) => {
-        const morseBlock = e.target.closest('.morse-block');
-        if (morseBlock) {
-            const morseText = morseBlock.innerText;
-            navigator.clipboard.writeText(morseText).then(() => {
-                const originalBg = morseBlock.style.backgroundColor;
-                morseBlock.style.backgroundColor = '#2d3a5e';
-                morseBlock.style.transition = '0.1s';
-                setTimeout(() => {
-                    morseBlock.style.backgroundColor = '';
-                }, 200);
-                const toast = document.createElement('div');
-                toast.textContent = '📋 Morse disalin!';
-                toast.style.position = 'fixed';
-                toast.style.bottom = '20px';
-                toast.style.left = '50%';
-                toast.style.transform = 'translateX(-50%)';
-                toast.style.backgroundColor = '#0f172a';
-                toast.style.color = '#facc15';
-                toast.style.padding = '6px 14px';
-                toast.style.borderRadius = '40px';
-                toast.style.fontSize = '0.75rem';
-                toast.style.zIndex = '999';
-                toast.style.fontFamily = 'monospace';
-                toast.style.border = '1px solid #facc1533';
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 1500);
-            }).catch(() => {});
-        }
-    });
-    
+    // Efek petunjuk kecil
     const hintSpan = document.querySelector('.hint-footer span');
     if (hintSpan) {
         hintSpan.style.transition = 'all 0.3s';
@@ -473,6 +589,11 @@
             setTimeout(() => hintSpan.style.opacity = '1', 500);
         }, 3000);
     }
+    
+    // Keterangan: Tidak ada satupun teks yang menyebut "morse" atau "decode" atau "kode rahasia 93114" di UI.
+    // Respon untuk kode benar hanya berupa indikator suara dan audio morse.
+    // Petunjuk hanya: abjad, nuestro sitio web.
+    // Label "teka-teki digital" dan aturan pesan sudah dihapus.
 </script>
 </body>
 </html>
