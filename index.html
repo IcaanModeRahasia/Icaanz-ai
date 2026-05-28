@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>ICAN · 谜语AI | 摩斯谜题</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #0b1120 0%, #111827 100%);
+            min-height: 100vh;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
+
+        /* 主卡片容器 */
+        .puzzle-card {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(18, 25, 45, 0.75);
+            backdrop-filter: blur(14px);
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* 头部区域 + ican 标志 */
+        .hero {
+            padding: 1.8rem 2rem 1.2rem 2rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .title {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            font-weight: 700;
+        }
+
+        .title .ican {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #E0E7FF, #A5B4FC);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .title .ai-badge {
+            font-size: 1rem;
+            background: rgba(165, 180, 252, 0.2);
+            padding: 0.2rem 0.8rem;
+            border-radius: 40px;
+            color: #c7d2fe;
+            font-weight: 500;
+            border: 0.5px solid rgba(165, 180, 252, 0.4);
+        }
+
+        .sub {
+            margin-top: 0.7rem;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .rule {
+            background: #1e293b60;
+            padding: 0.2rem 0.7rem;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #facc15;
+        }
+
+        /* chat 区域 */
+        .chat-area {
+            padding: 1.5rem 1.8rem;
+            min-height: 400px;
+            max-height: 500px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            scroll-behavior: smooth;
+        }
+
+        /* 自定义滚动条 */
+        .chat-area::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .chat-area::-webkit-scrollbar-track {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+
+        .chat-area::-webkit-scrollbar-thumb {
+            background: #4f46e5;
+            border-radius: 10px;
+        }
+
+        /* 气泡样式 */
+        .message {
+            display: flex;
+            flex-direction: column;
+            max-width: 85%;
+            animation: fadeSlideUp 0.25s ease-out;
+        }
+
+        .user-msg {
+            align-self: flex-end;
+        }
+
+        .ai-msg {
+            align-self: flex-start;
+        }
+
+        .bubble {
+            padding: 0.8rem 1.2rem;
+            border-radius: 1.8rem;
+            font-size: 0.95rem;
+            line-height: 1.45;
+            word-break: break-word;
+            white-space: pre-wrap;
+            transition: transform 0.1s ease;
+        }
+
+        .user-msg .bubble {
+            background: linear-gradient(115deg, #4f46e5, #6366f1);
+            color: white;
+            border-bottom-right-radius: 0.25rem;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+        }
+
+        .ai-msg .bubble {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            border-bottom-left-radius: 0.25rem;
+            backdrop-filter: blur(4px);
+        }
+
+        .morse-block {
+            font-family: 'Courier New', 'SF Mono', monospace;
+            font-weight: 600;
+            background: #0f172a;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            margin-top: 0.5rem;
+            border-left: 3px solid #facc15;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            color: #facc15;
+        }
+
+        .timestamp {
+            font-size: 0.65rem;
+            margin-top: 0.3rem;
+            margin-left: 0.8rem;
+            color: #5b6e8c;
+            letter-spacing: 0.3px;
+        }
+
+        /* 输入区域 */
+        .input-panel {
+            padding: 1rem 1.8rem 1.8rem 1.8rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+            background: #0f172a;
+            border-radius: 3rem;
+            padding: 0.25rem 0.25rem 0.25rem 1.2rem;
+            border: 1px solid #334155;
+            transition: all 0.2s;
+        }
+
+        .input-group:focus-within {
+            border-color: #818cf8;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+        }
+
+        #messageInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 0.8rem 0;
+            font-size: 0.95rem;
+            color: #f1f5f9;
+            outline: none;
+            font-family: inherit;
+        }
+
+        #messageInput::placeholder {
+            color: #475569;
+            font-weight: 400;
+        }
+
+        button {
+            background: #4f46e5;
+            border: none;
+            padding: 0.6rem 1.3rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            color: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            font-family: inherit;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            background: #6366f1;
+            transform: scale(0.96);
+        }
+
+        button:active {
+            transform: scale(0.94);
+        }
+
+        .hint-footer {
+            padding: 0.8rem 1.8rem 1.2rem;
+            font-size: 0.75rem;
+            color: #6c7a91;
+            background: rgba(0, 0, 0, 0.2);
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            letter-spacing: 0.3px;
+        }
+
+        .hint-footer span {
+            color: #facc15;
+            font-weight: 500;
+            background: #00000030;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+        }
+
+        @keyframes fadeSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 欢迎气泡特殊效果 */
+        .welcome-bubble {
+            opacity: 0.9;
+        }
+
+        /* 小屏幕适配 */
+        @media (max-width: 550px) {
+            .puzzle-card {
+                border-radius: 1.8rem;
+            }
+            .chat-area {
+                padding: 1.2rem;
+                max-height: 420px;
+            }
+            .hero {
+                padding: 1.2rem 1.2rem 0.8rem;
+            }
+            .title .ican {
+                font-size: 1.8rem;
+            }
+            .message {
+                max-width: 90%;
+            }
+            .input-panel {
+                padding: 0.8rem 1.2rem 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="puzzle-card">
+    <div class="hero">
+        <div class="title">
+            <span class="ican">ICAN</span>
+            <span class="ai-badge">✦ 谜语AI ✦</span>
+        </div>
+        <div class="sub">
+            <span>🧩 teka-teki digital</span>
+            <span class="rule">⚡ setiap pesan → "kode salah"</span>
+        </div>
+    </div>
+
+    <!-- riwayat percakapan -->
+    <div class="chat-area" id="chatArea">
+        <!-- pesan selamat datang sistem -->
+        <div class="message ai-msg">
+            <div class="bubble welcome-bubble">
+                🤖 AI Teka-Tki aktif.<br>
+                Kirim pesan apapun, aku akan menjawab <strong style="color:#facc15;">kode salah</strong>.<br>
+                🔐 Tapi... jika kamu tahu kode rahasia, mungkin jawabannya berbeda.
+            </div>
+            <div class="timestamp">now</div>
+        </div>
+    </div>
+
+    <div class="input-panel">
+        <div class="input-group">
+            <input type="text" id="messageInput" placeholder="Ketik pesan rahasia atau tebakan..." autocomplete="off">
+            <button id="sendBtn">Kirim ➤</button>
+        </div>
+    </div>
+    <div class="hint-footer">
+        🔍 <span>petunjuk : abjad, nuestro sitio web</span> · 93114 ??? 
+    </div>
+</div>
+
+<script>
+    // ----- elemen DOM -----
+    const chatContainer = document.getElementById('chatArea');
+    const inputField = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendBtn');
+
+    // ----- MORSE JAWABAN UNTUK 93114 (I LOVE YOU versi asli soal) -----
+    // Berdasarkan interpretasi dari petunjuk yang diberikan:
+    // I = ..      , L = .-..   , O = ---    , V = ...- 
+    // E = .       , Y = -.--   , O = ---    , U = ..-
+    // Ditampilkan persis seperti format yang membentuk "I LOVE YOU"
+    const morseAnswerFor93114 = `..
+.-..
+---
+...-
+.
+-.--
+---
+..-`;
+
+    // ----- fungsi utama untuk menambah pesan ke chat -----
+    function addMessage(sender, text, isMorse = false, morseRaw = null) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender === 'user' ? 'user-msg' : 'ai-msg'}`;
+        
+        const bubbleDiv = document.createElement('div');
+        bubbleDiv.className = 'bubble';
+        
+        // jika ini adalah jawaban AI dan berisi morse spesial (dari 93114)
+        if (sender === 'ai' && isMorse && morseRaw) {
+            // teks biasa penjelasan + blok morse
+            const normalText = document.createTextNode('🎯 Kode rahasia diterima. Inilah jawabannya:\n');
+            bubbleDiv.appendChild(normalText);
+            const preBlock = document.createElement('pre');
+            preBlock.className = 'morse-block';
+            preBlock.textContent = morseRaw;
+            bubbleDiv.appendChild(preBlock);
+            // tambahan keterangan friendly
+            const hintNote = document.createElement('div');
+            hintNote.style.fontSize = '0.7rem';
+            hintNote.style.marginTop = '0.5rem';
+            hintNote.style.color = '#94a3b8';
+            hintNote.innerText = '⌨️ morse · decode menjadi pesan rahasia';
+            bubbleDiv.appendChild(hintNote);
+        } 
+        else {
+            // Pesan biasa (user atau AI "kode salah")
+            bubbleDiv.textContent = text;
+        }
+        
+        messageDiv.appendChild(bubbleDiv);
+        
+        // timestamp (jam lokal)
+        const timeSpan = document.createElement('div');
+        timeSpan.className = 'timestamp';
+        const now = new Date();
+        const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+        timeSpan.textContent = timeStr;
+        messageDiv.appendChild(timeSpan);
+        
+        chatContainer.appendChild(messageDiv);
+        // scroll ke bawah dengan efek smooth
+        messageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    // ----- LOGIKA UTAMA AI -----
+    // setiap pesan user diproses: jika pesan === "93114" => balas dengan morse spesial
+    // selain itu => balas "kode salah"
+    function processUserMessage(rawMessage) {
+        let message = rawMessage.trim();
+        if (message === "") {
+            // tidak merespon jika kosong, bisa kasih hint dikit? biar sesuai aturan tetap tidak merespon? 
+            // lebih baik ignore biar ga spam, tapi boleh kasih peringatan halus
+            addMessage('ai', '📭 Kirim pesan teks ya ... (kosong tidak direspon)');
+            return;
+        }
+        
+        // Tampilkan pesan user di chat
+        addMessage('user', message);
+        
+        // Cek apakah pesan adalah kode rahasia "93114"
+        if (message === "93114") {
+            // Balas dengan morse sesuai permintaan soal
+            addMessage('ai', '', true, morseAnswerFor93114);
+        } 
+        else {
+            // Untuk semua pesan lain, jawab "kode salah"
+            addMessage('ai', '❌ kode salah');
+        }
+    }
+    
+    // ----- event handler kirim pesan -----
+    function handleSend() {
+        const userText = inputField.value;
+        if (userText.trim() === "") {
+            // sedikit feedback visual tapi tidak merusak aturan
+            inputField.placeholder = "Ketik sesuatu dulu...";
+            setTimeout(() => {
+                inputField.placeholder = "Ketik pesan rahasia atau tebakan...";
+            }, 1200);
+            return;
+        }
+        processUserMessage(userText);
+        inputField.value = "";
+        inputField.focus();
+    }
+    
+    // Enter key support
+    function onEnterKey(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSend();
+        }
+    }
+    
+    // Bonus efek smooth: initial auto-scroll ke bawah saat halaman dimuat
+    window.addEventListener('load', () => {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        inputField.focus();
+    });
+    
+    // Pembersihan: jika ada double event, kita pasang dengan aman
+    sendButton.addEventListener('click', handleSend);
+    inputField.addEventListener('keypress', onEnterKey);
+    
+    // Menambahkan sedikit gaya ekstra pada pre morse agar lebih rapi di mobile (overflow)
+    // style dinamis untuk pre yang sudah ada di CSS
+    const style = document.createElement('style');
+    style.textContent = `
+        .morse-block {
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        @media (max-width: 480px) {
+            .morse-block {
+                font-size: 0.8rem;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // === PETUNJUK INTERAKTIF (tambahan sedikit edukasi) ===
+    // Tampilkan pesan interaktif kecil setelah loading? tidak perlu, namun user sudah mengerti.
+    // Untuk memenuhi nuansa "AI khusus teka-teki", kita tambahkan pesan kedua opsional?
+    // Menambahkan pesan sistem yg memberi tahu bahwa petunjuk ada di footer.
+    // Tapi tidak merusak requirement. Biarkan rapi.
+    // Juga memastikan judul web mengandung "ican" – sudah ada di header dan title.
+    document.title = "ICAN | Puzzle Morse AI";
+    
+    // Membuat efek semacam typing ringan (hanya hiasan) tidak mengganggu aturan.
+    console.log("ICAN AI aktif — 93114 adalah kunci morse rahasia");
+    
+    // Memastikan bahwa untuk pesan 93114, morse yang tampil persis dari soal 
+    // dengan spasi dan baris yang autentik. Format morseAnswerFor93114 sudah sesuai:
+    // ..
+    // .-..
+    // ---
+    // ...-
+    // .
+    // -.-- 
+    // ---
+    // ..-
+    // Tidak ada modifikasi, sehingga "I LOVE YOU" dalam morse terlihat persis seperti clue.
+    
+    // ---------- FITUR TAMBAHAN: petunjuk abjad + nuestro sitio web -------
+    // Secara halus, saat pengguna mengirim "petunjuk" atau "hint", kita tetap 
+    // menjawab "kode salah" sesuai aturan (karena bukan 93114). Tapi kita bisa 
+    // menambahkan tooltip atau pesan di footer. Sudah ada di footer.
+    // Di footer sudah ada: "petunjuk : abjad, nuestro sitio web · 93114 ???"
+    // Ini memperkuat clue bahwa 93114 adalah angka yang perlu dipecahkan.
+    // Untuk pengalaman lebih, kita bisa membuat efek hover pada clue.
+    // Tidak merusak inti.
+    
+    // Penjelasan UX: Setiap pesan selain 93114 -> "kode salah". 
+    // Ini menjawab requirement: "setiap orang mengirim pesan kepada nya selalu jawab kode salah"
+    // dan untuk 93114 -> morse spesial.
+    
+    // (optional) Menambahkan interaksi demo tentang abjad (A1Z26) tidak diwajibkan, 
+    // namun bisa jadi pengguna mengerti maksud: 9=I, 3=C, 1=A, 1=A, 4=D -> "ICAAD"? 
+    // Tapi karena jawaban akhir adlh morse "I LOVE YOU", itu bagian dari misteri.
+    // Tetap biarkan, desain sudah menampilkan keseluruhan.
+    
+    // Sertakan animasi micro pada tombol / input
+    const inputGroup = document.querySelector('.input-group');
+    if(inputGroup) {
+        inputGroup.addEventListener('mouseenter', () => {
+            inputGroup.style.transition = 'all 0.2s';
+        });
+    }
+    
+    // Pembersihan pesan berlebih secara otomatis (limit chat agar tidak overload)
+    // batasi chat sampai 40 pesan -> hapus yang paling atas jika melebihi
+    function manageChatOverflow() {
+        const messages = chatContainer.querySelectorAll('.message');
+        if (messages.length > 45) {
+            for (let i = 0; i < 15; i++) {
+                if (messages[i]) messages[i].remove();
+            }
+        }
+    }
+    
+    // override addMessage asli agar bisa memanggil manageChatOverflow 
+    // (gunakan monkeypatch karena addMessage sudah didefinisikan)
+    const originalAddMessage = addMessage;
+    window.addMessage = function(sender, text, isMorse, morseRaw) {
+        originalAddMessage(sender, text, isMorse, morseRaw);
+        manageChatOverflow();
+    };
+    addMessage = window.addMessage;
+    
+    // Terapkan ulang referensi fungsi agar konsisten
+    // (kode di atas sudah mendefinisikan addMessage, selanjutnya timpa)
+    // agar aman, kita replace fungsi global dengan yang sudah diwrap
+    window.addMessage = addMessage;
+    
+    // Bonus: jika user mengirim '93114' berkali-kali, pastikan output morse konsisten tanpa error.
+    // Sudah teruji.
+    
+    // Animasi halus untuk bubble tambahan (sudah ada keyframes)
+    // dan menampilkan pesan default contoh "kode salah" bisa dicoba oleh pengguna.
+    // Agar lebih terasa AI, tambahkan efek "sedang mengetik" sederhana? Boleh opsional tidak mengganggu.
+    // Supaya lebih smooth, kita bisa menampilkan indikator '...' tipis sebelum respon AI? Tapi tidak wajib.
+    // Untuk kesederhanaan dan requirement 'smooth css', transisi sudah ada di bubbel dan hover.
+    
+    // show initial welcome message with extra clue? Sudah ada di awal.
+    // Sekarang pastikan morse yang ditampilkan untuk 93114 dalam format persis soal.
+    // Uji coba: jika user mengirim "93114" maka akan muncul:
+    // "🎯 Kode rahasia diterima. Inilah jawabannya:" lalu blok morse:
+    // ..
+    // .-..
+    // ---
+    // ...-
+    // .
+    // -.-- 
+    // ---
+    // ..-
+    // Hal itu sesuai.
+    
+    // Untuk memberikan kredensial bahwa jawaban itu adalah "I LOVE YOU" dalam morse, 
+    // biarkan pengguna menebak. Petunjuk abjad + nuestro sitio web (site kami) 
+    // mungkin mengarahkan bahwa angka 93114 jika dimapping ke alfabet (A=1..) menghasilkan I C A A D?
+    // atau bahasa spanyol? Namun inti dari soal tetap dipenuhi.
+    
+    // Penambahan sentuhan: jika pengguna mengirim "93114 " dengan spasi, trim sudah memastikan masuk.
+    // Juga pastikan morse bisa di-copy oleh user dengan mudah.
+    
+    // optional: menambahkan tombol copy morse (tidak wajib) tapi tidak mengganggu.
+    // saya berikan sedikit fitur ekstra: saat klik pada blok morse, teks morse otomatis ter-copy.
+    // Ini meningkatkan UX dan tetap relevan.
+    document.addEventListener('click', (e) => {
+        const morseBlock = e.target.closest('.morse-block');
+        if (morseBlock) {
+            const morseText = morseBlock.innerText;
+            navigator.clipboard.writeText(morseText).then(() => {
+                const originalBg = morseBlock.style.backgroundColor;
+                morseBlock.style.backgroundColor = '#2d3a5e';
+                morseBlock.style.transition = '0.1s';
+                setTimeout(() => {
+                    morseBlock.style.backgroundColor = '';
+                }, 200);
+                // feedback kecil
+                const toast = document.createElement('div');
+                toast.textContent = '📋 Morse disalin!';
+                toast.style.position = 'fixed';
+                toast.style.bottom = '20px';
+                toast.style.left = '50%';
+                toast.style.transform = 'translateX(-50%)';
+                toast.style.backgroundColor = '#0f172a';
+                toast.style.color = '#facc15';
+                toast.style.padding = '6px 14px';
+                toast.style.borderRadius = '40px';
+                toast.style.fontSize = '0.75rem';
+                toast.style.zIndex = '999';
+                toast.style.fontFamily = 'monospace';
+                toast.style.border = '1px solid #facc1533';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 1500);
+            }).catch(() => {});
+        }
+    });
+    
+    // Tampilan awal sedikit efek tambahan: footer petunjuk berdenyut ringan (opsional)
+    const hintSpan = document.querySelector('.hint-footer span');
+    if (hintSpan) {
+        hintSpan.style.transition = 'all 0.3s';
+        setInterval(() => {
+            hintSpan.style.opacity = '0.7';
+            setTimeout(() => hintSpan.style.opacity = '1', 500);
+        }, 3000);
+    }
+    
+    // Selesai: semua requirement terpenuhi:
+    // 1. Website AI khusus teka-teki -> percakapan interaktif.
+    // 2. Setiap pesan selalu jawab "kode salah" KECUALI 93114.
+    // 3. Jika 93114 -> jawab dengan morse yang sesuai petunjuk (I LOVE YOU).
+    // 4. Judul web mengandung "ican".
+    // 5. HTML + CSS smooth (transisi, animasi fade, interaksi mulus).
+    // 6. Petunjuk "abjad, nuestro sitio web" ditampilkan di footer.
+    // 7. Desain modern dan responsif.
+</script>
+</body>
+</html>
