@@ -21,7 +21,6 @@
             padding: 1.5rem;
         }
 
-        /* 主卡片容器 */
         .puzzle-card {
             max-width: 800px;
             width: 100%;
@@ -33,7 +32,6 @@
             transition: all 0.3s ease;
         }
 
-        /* 头部区域 + ican 标志 */
         .hero {
             padding: 1.8rem 2rem 1.2rem 2rem;
             background: rgba(0, 0, 0, 0.2);
@@ -67,7 +65,6 @@
             border: 0.5px solid rgba(165, 180, 252, 0.4);
         }
 
-        /* sub header tanpa teka-teki digital dan tanpa aturan pesan */
         .sub {
             margin-top: 0.5rem;
             color: #94a3b8;
@@ -76,7 +73,6 @@
             justify-content: flex-end;
         }
 
-        /* chat 区域 */
         .chat-area {
             padding: 1.5rem 1.8rem;
             min-height: 400px;
@@ -88,7 +84,6 @@
             scroll-behavior: smooth;
         }
 
-        /* 自定义滚动条 */
         .chat-area::-webkit-scrollbar {
             width: 5px;
         }
@@ -103,7 +98,6 @@
             border-radius: 10px;
         }
 
-        /* 气泡样式 */
         .message {
             display: flex;
             flex-direction: column;
@@ -167,7 +161,6 @@
             letter-spacing: 0.3px;
         }
 
-        /* 输入区域 */
         .input-panel {
             padding: 1rem 1.8rem 1.8rem 1.8rem;
             background: rgba(0, 0, 0, 0.2);
@@ -258,7 +251,6 @@
             }
         }
 
-        /* 小屏幕适配 */
         @media (max-width: 550px) {
             .puzzle-card {
                 border-radius: 1.8rem;
@@ -290,14 +282,10 @@
             <span class="ican">ICAN</span>
             <span class="ai-badge">✦ 謎語AI ✦</span>
         </div>
-        <div class="sub">
-            <!-- tidak ada teka-teki digital dan tidak ada aturan pesan -->
-        </div>
+        <div class="sub"></div>
     </div>
 
-    <!-- riwayat percakapan -->
     <div class="chat-area" id="chatArea">
-        <!-- pesan selamat datang baru: Halo, semoga beruntung🍀 -->
         <div class="message ai-msg">
             <div class="bubble welcome-bubble">
                 Halo, semoga beruntung🍀
@@ -318,13 +306,11 @@
 </div>
 
 <script>
-    // ----- elemen DOM -----
     const chatContainer = document.getElementById('chatArea');
     const inputField = document.getElementById('messageInput');
     const sendButton = document.getElementById('sendBtn');
 
-    // ----- MORSE JAWABAN UNTUK KODE RAHASIA (93114) -----
-    // Morse mewakili "I LOVE YOU" - tidak menampilkan angka 93114 dimanapun di UI
+    // Morse untuk kode rahasia (93114) -> I LOVE YOU
     const morseAnswer = `..
 .-..
 ---
@@ -334,28 +320,21 @@
 ---
 ..-`;
 
-    // ----- fungsi untuk menambah pesan ke chat -----
     function addMessage(sender, text, isMorse = false, morseRaw = null) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${sender === 'user' ? 'user-msg' : 'ai-msg'}`;
-        
         const bubbleDiv = document.createElement('div');
         bubbleDiv.className = 'bubble';
         
-        // jika ini adalah jawaban AI dan berisi morse spesial (dari kode rahasia)
         if (sender === 'ai' && isMorse && morseRaw) {
+            // Hanya menampilkan teks pembuka dan blok morse, tanpa keterangan tambahan
             const normalText = document.createTextNode('🎯 Kode rahasia diterima. Inilah jawabannya:\n');
             bubbleDiv.appendChild(normalText);
             const preBlock = document.createElement('pre');
             preBlock.className = 'morse-block';
             preBlock.textContent = morseRaw;
             bubbleDiv.appendChild(preBlock);
-            const hintNote = document.createElement('div');
-            hintNote.style.fontSize = '0.7rem';
-            hintNote.style.marginTop = '0.5rem';
-            hintNote.style.color = '#94a3b8';
-            hintNote.innerText = '⌨️ morse · decode menjadi pesan rahasia';
-            bubbleDiv.appendChild(hintNote);
+            // Tidak ada teks "⌨️ morse · decode menjadi pesan rahasia"
         } 
         else {
             bubbleDiv.textContent = text;
@@ -363,7 +342,6 @@
         
         messageDiv.appendChild(bubbleDiv);
         
-        // timestamp
         const timeSpan = document.createElement('div');
         timeSpan.className = 'timestamp';
         const now = new Date();
@@ -375,7 +353,6 @@
         messageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
     
-    // ----- LOGIKA UTAMA AI (diubah: selain kode rahasia jawab "web ini mungkin masi eror") -----
     function processUserMessage(rawMessage) {
         let message = rawMessage.trim();
         if (message === "") {
@@ -383,21 +360,16 @@
             return;
         }
         
-        // Tampilkan pesan user
         addMessage('user', message);
         
-        // Periksa apakah pesan adalah kode rahasia "93114"
         if (message === "93114") {
-            // Balas dengan morse (tanpa menyebut angka)
             addMessage('ai', '', true, morseAnswer);
         } 
         else {
-            // Untuk semua pesan lain, jawab sesuai permintaan: "web ini mungkin masi eror"
             addMessage('ai', 'web ini mungkin masi eror');
         }
     }
     
-    // ----- event handler kirim pesan -----
     function handleSend() {
         const userText = inputField.value;
         if (userText.trim() === "") {
@@ -412,7 +384,6 @@
         inputField.focus();
     }
     
-    // Enter key
     function onEnterKey(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -420,7 +391,6 @@
         }
     }
     
-    // scroll awal & fokus
     window.addEventListener('load', () => {
         chatContainer.scrollTop = chatContainer.scrollHeight;
         inputField.focus();
@@ -429,7 +399,6 @@
     sendButton.addEventListener('click', handleSend);
     inputField.addEventListener('keypress', onEnterKey);
     
-    // style tambahan untuk morse block mobile
     const style = document.createElement('style');
     style.textContent = `
         .morse-block {
@@ -446,10 +415,8 @@
     `;
     document.head.appendChild(style);
     
-    // judul web mengandung "ican"
     document.title = "ICAN | Misteri Abjad";
     
-    // batasi jumlah pesan agar tidak overload
     function manageChatOverflow() {
         const messages = chatContainer.querySelectorAll('.message');
         if (messages.length > 45) {
@@ -459,7 +426,6 @@
         }
     }
     
-    // wrap addMessage untuk manajemen overflow
     const originalAddMessage = addMessage;
     window.addMessage = function(sender, text, isMorse, morseRaw) {
         originalAddMessage(sender, text, isMorse, morseRaw);
@@ -467,7 +433,7 @@
     };
     addMessage = window.addMessage;
     
-    // fitur copy morse saat klik
+    // Copy morse saat klik
     document.addEventListener('click', (e) => {
         const morseBlock = e.target.closest('.morse-block');
         if (morseBlock) {
@@ -499,7 +465,6 @@
         }
     });
     
-    // efek kecil pada petunjuk
     const hintSpan = document.querySelector('.hint-footer span');
     if (hintSpan) {
         hintSpan.style.transition = 'all 0.3s';
@@ -508,11 +473,6 @@
             setTimeout(() => hintSpan.style.opacity = '1', 500);
         }, 3000);
     }
-    
-    // Tidak ada label "teka-teki digital", tidak ada "setiap pesan → kode salah"
-    // Petunjuk hanya "abjad, nuestro sitio web"
-    // Respon selain kode rahasia: "web ini mungkin masi eror" (membingungkan)
-    // Kode rahasia 93114 tetap membalas morse tanpa menyebut angkanya.
 </script>
 </body>
 </html>
