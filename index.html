@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ICAN · 谜语AI | 摩斯谜题</title>
+    <title>ICAN · Misteri Abjad</title>
     <style>
         * {
             margin: 0;
@@ -269,11 +269,6 @@
             }
         }
 
-        /* 欢迎气泡特殊效果 */
-        .welcome-bubble {
-            opacity: 0.9;
-        }
-
         /* 小屏幕适配 */
         @media (max-width: 550px) {
             .puzzle-card {
@@ -304,7 +299,7 @@
     <div class="hero">
         <div class="title">
             <span class="ican">ICAN</span>
-            <span class="ai-badge">✦ 谜语AI ✦</span>
+            <span class="ai-badge">✦ 謎語AI ✦</span>
         </div>
         <div class="sub">
             <span>🧩 teka-teki digital</span>
@@ -314,12 +309,10 @@
 
     <!-- riwayat percakapan -->
     <div class="chat-area" id="chatArea">
-        <!-- pesan selamat datang sistem -->
+        <!-- pesan selamat datang baru: Halo, semoga beruntung🍀 -->
         <div class="message ai-msg">
             <div class="bubble welcome-bubble">
-                🤖 AI Teka-Tki aktif.<br>
-                Kirim pesan apapun, aku akan menjawab <strong style="color:#facc15;">kode salah</strong>.<br>
-                🔐 Tapi... jika kamu tahu kode rahasia, mungkin jawabannya berbeda.
+                Halo, semoga beruntung🍀
             </div>
             <div class="timestamp">now</div>
         </div>
@@ -332,7 +325,7 @@
         </div>
     </div>
     <div class="hint-footer">
-        🔍 <span>petunjuk : abjad, nuestro sitio web</span> · 93114 ??? 
+        🔍 <span>petunjuk : abjad, nuestro sitio web</span>
     </div>
 </div>
 
@@ -342,12 +335,10 @@
     const inputField = document.getElementById('messageInput');
     const sendButton = document.getElementById('sendBtn');
 
-    // ----- MORSE JAWABAN UNTUK 93114 (I LOVE YOU versi asli soal) -----
-    // Berdasarkan interpretasi dari petunjuk yang diberikan:
-    // I = ..      , L = .-..   , O = ---    , V = ...- 
-    // E = .       , Y = -.--   , O = ---    , U = ..-
-    // Ditampilkan persis seperti format yang membentuk "I LOVE YOU"
-    const morseAnswerFor93114 = `..
+    // ----- MORSE JAWABAN UNTUK KODE RAHASIA (93114) -----
+    // Jawaban ini tidak menampilkan angka 93114 di manapun di UI
+    // Morse mewakili "I LOVE YOU"
+    const morseAnswer = `..
 .-..
 ---
 ...-
@@ -356,7 +347,7 @@
 ---
 ..-`;
 
-    // ----- fungsi utama untuk menambah pesan ke chat -----
+    // ----- fungsi untuk menambah pesan ke chat -----
     function addMessage(sender, text, isMorse = false, morseRaw = null) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${sender === 'user' ? 'user-msg' : 'ai-msg'}`;
@@ -364,16 +355,14 @@
         const bubbleDiv = document.createElement('div');
         bubbleDiv.className = 'bubble';
         
-        // jika ini adalah jawaban AI dan berisi morse spesial (dari 93114)
+        // jika ini adalah jawaban AI dan berisi morse spesial (dari kode rahasia)
         if (sender === 'ai' && isMorse && morseRaw) {
-            // teks biasa penjelasan + blok morse
             const normalText = document.createTextNode('🎯 Kode rahasia diterima. Inilah jawabannya:\n');
             bubbleDiv.appendChild(normalText);
             const preBlock = document.createElement('pre');
             preBlock.className = 'morse-block';
             preBlock.textContent = morseRaw;
             bubbleDiv.appendChild(preBlock);
-            // tambahan keterangan friendly
             const hintNote = document.createElement('div');
             hintNote.style.fontSize = '0.7rem';
             hintNote.style.marginTop = '0.5rem';
@@ -382,13 +371,12 @@
             bubbleDiv.appendChild(hintNote);
         } 
         else {
-            // Pesan biasa (user atau AI "kode salah")
             bubbleDiv.textContent = text;
         }
         
         messageDiv.appendChild(bubbleDiv);
         
-        // timestamp (jam lokal)
+        // timestamp
         const timeSpan = document.createElement('div');
         timeSpan.className = 'timestamp';
         const now = new Date();
@@ -397,29 +385,27 @@
         messageDiv.appendChild(timeSpan);
         
         chatContainer.appendChild(messageDiv);
-        // scroll ke bawah dengan efek smooth
         messageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
     
     // ----- LOGIKA UTAMA AI -----
-    // setiap pesan user diproses: jika pesan === "93114" => balas dengan morse spesial
-    // selain itu => balas "kode salah"
+    // Setiap pesan user diproses: jika pesan === "93114" (kode rahasia) => balas dengan morse
+    // Selain itu => balas "kode salah"
+    // Catatan: Angka 93114 tidak pernah ditampilkan di interface, hanya logika internal.
     function processUserMessage(rawMessage) {
         let message = rawMessage.trim();
         if (message === "") {
-            // tidak merespon jika kosong, bisa kasih hint dikit? biar sesuai aturan tetap tidak merespon? 
-            // lebih baik ignore biar ga spam, tapi boleh kasih peringatan halus
             addMessage('ai', '📭 Kirim pesan teks ya ... (kosong tidak direspon)');
             return;
         }
         
-        // Tampilkan pesan user di chat
+        // Tampilkan pesan user
         addMessage('user', message);
         
-        // Cek apakah pesan adalah kode rahasia "93114"
+        // Periksa apakah pesan adalah kode rahasia "93114"
         if (message === "93114") {
-            // Balas dengan morse sesuai permintaan soal
-            addMessage('ai', '', true, morseAnswerFor93114);
+            // Balas dengan morse (tanpa menyebut angka 93114)
+            addMessage('ai', '', true, morseAnswer);
         } 
         else {
             // Untuk semua pesan lain, jawab "kode salah"
@@ -431,7 +417,6 @@
     function handleSend() {
         const userText = inputField.value;
         if (userText.trim() === "") {
-            // sedikit feedback visual tapi tidak merusak aturan
             inputField.placeholder = "Ketik sesuatu dulu...";
             setTimeout(() => {
                 inputField.placeholder = "Ketik pesan rahasia atau tebakan...";
@@ -443,7 +428,7 @@
         inputField.focus();
     }
     
-    // Enter key support
+    // Enter key
     function onEnterKey(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -451,18 +436,16 @@
         }
     }
     
-    // Bonus efek smooth: initial auto-scroll ke bawah saat halaman dimuat
+    // scroll awal & fokus
     window.addEventListener('load', () => {
         chatContainer.scrollTop = chatContainer.scrollHeight;
         inputField.focus();
     });
     
-    // Pembersihan: jika ada double event, kita pasang dengan aman
     sendButton.addEventListener('click', handleSend);
     inputField.addEventListener('keypress', onEnterKey);
     
-    // Menambahkan sedikit gaya ekstra pada pre morse agar lebih rapi di mobile (overflow)
-    // style dinamis untuk pre yang sudah ada di CSS
+    // style tambahan untuk morse block mobile
     const style = document.createElement('style');
     style.textContent = `
         .morse-block {
@@ -479,57 +462,10 @@
     `;
     document.head.appendChild(style);
     
-    // === PETUNJUK INTERAKTIF (tambahan sedikit edukasi) ===
-    // Tampilkan pesan interaktif kecil setelah loading? tidak perlu, namun user sudah mengerti.
-    // Untuk memenuhi nuansa "AI khusus teka-teki", kita tambahkan pesan kedua opsional?
-    // Menambahkan pesan sistem yg memberi tahu bahwa petunjuk ada di footer.
-    // Tapi tidak merusak requirement. Biarkan rapi.
-    // Juga memastikan judul web mengandung "ican" – sudah ada di header dan title.
-    document.title = "ICAN | Puzzle Morse AI";
+    // judul web mengandung "ican"
+    document.title = "ICAN | Misteri Abjad";
     
-    // Membuat efek semacam typing ringan (hanya hiasan) tidak mengganggu aturan.
-    console.log("ICAN AI aktif — 93114 adalah kunci morse rahasia");
-    
-    // Memastikan bahwa untuk pesan 93114, morse yang tampil persis dari soal 
-    // dengan spasi dan baris yang autentik. Format morseAnswerFor93114 sudah sesuai:
-    // ..
-    // .-..
-    // ---
-    // ...-
-    // .
-    // -.-- 
-    // ---
-    // ..-
-    // Tidak ada modifikasi, sehingga "I LOVE YOU" dalam morse terlihat persis seperti clue.
-    
-    // ---------- FITUR TAMBAHAN: petunjuk abjad + nuestro sitio web -------
-    // Secara halus, saat pengguna mengirim "petunjuk" atau "hint", kita tetap 
-    // menjawab "kode salah" sesuai aturan (karena bukan 93114). Tapi kita bisa 
-    // menambahkan tooltip atau pesan di footer. Sudah ada di footer.
-    // Di footer sudah ada: "petunjuk : abjad, nuestro sitio web · 93114 ???"
-    // Ini memperkuat clue bahwa 93114 adalah angka yang perlu dipecahkan.
-    // Untuk pengalaman lebih, kita bisa membuat efek hover pada clue.
-    // Tidak merusak inti.
-    
-    // Penjelasan UX: Setiap pesan selain 93114 -> "kode salah". 
-    // Ini menjawab requirement: "setiap orang mengirim pesan kepada nya selalu jawab kode salah"
-    // dan untuk 93114 -> morse spesial.
-    
-    // (optional) Menambahkan interaksi demo tentang abjad (A1Z26) tidak diwajibkan, 
-    // namun bisa jadi pengguna mengerti maksud: 9=I, 3=C, 1=A, 1=A, 4=D -> "ICAAD"? 
-    // Tapi karena jawaban akhir adlh morse "I LOVE YOU", itu bagian dari misteri.
-    // Tetap biarkan, desain sudah menampilkan keseluruhan.
-    
-    // Sertakan animasi micro pada tombol / input
-    const inputGroup = document.querySelector('.input-group');
-    if(inputGroup) {
-        inputGroup.addEventListener('mouseenter', () => {
-            inputGroup.style.transition = 'all 0.2s';
-        });
-    }
-    
-    // Pembersihan pesan berlebih secara otomatis (limit chat agar tidak overload)
-    // batasi chat sampai 40 pesan -> hapus yang paling atas jika melebihi
+    // batasi jumlah pesan agar tidak overload
     function manageChatOverflow() {
         const messages = chatContainer.querySelectorAll('.message');
         if (messages.length > 45) {
@@ -539,8 +475,7 @@
         }
     }
     
-    // override addMessage asli agar bisa memanggil manageChatOverflow 
-    // (gunakan monkeypatch karena addMessage sudah didefinisikan)
+    // wrap addMessage untuk manajemen overflow
     const originalAddMessage = addMessage;
     window.addMessage = function(sender, text, isMorse, morseRaw) {
         originalAddMessage(sender, text, isMorse, morseRaw);
@@ -548,45 +483,7 @@
     };
     addMessage = window.addMessage;
     
-    // Terapkan ulang referensi fungsi agar konsisten
-    // (kode di atas sudah mendefinisikan addMessage, selanjutnya timpa)
-    // agar aman, kita replace fungsi global dengan yang sudah diwrap
-    window.addMessage = addMessage;
-    
-    // Bonus: jika user mengirim '93114' berkali-kali, pastikan output morse konsisten tanpa error.
-    // Sudah teruji.
-    
-    // Animasi halus untuk bubble tambahan (sudah ada keyframes)
-    // dan menampilkan pesan default contoh "kode salah" bisa dicoba oleh pengguna.
-    // Agar lebih terasa AI, tambahkan efek "sedang mengetik" sederhana? Boleh opsional tidak mengganggu.
-    // Supaya lebih smooth, kita bisa menampilkan indikator '...' tipis sebelum respon AI? Tapi tidak wajib.
-    // Untuk kesederhanaan dan requirement 'smooth css', transisi sudah ada di bubbel dan hover.
-    
-    // show initial welcome message with extra clue? Sudah ada di awal.
-    // Sekarang pastikan morse yang ditampilkan untuk 93114 dalam format persis soal.
-    // Uji coba: jika user mengirim "93114" maka akan muncul:
-    // "🎯 Kode rahasia diterima. Inilah jawabannya:" lalu blok morse:
-    // ..
-    // .-..
-    // ---
-    // ...-
-    // .
-    // -.-- 
-    // ---
-    // ..-
-    // Hal itu sesuai.
-    
-    // Untuk memberikan kredensial bahwa jawaban itu adalah "I LOVE YOU" dalam morse, 
-    // biarkan pengguna menebak. Petunjuk abjad + nuestro sitio web (site kami) 
-    // mungkin mengarahkan bahwa angka 93114 jika dimapping ke alfabet (A=1..) menghasilkan I C A A D?
-    // atau bahasa spanyol? Namun inti dari soal tetap dipenuhi.
-    
-    // Penambahan sentuhan: jika pengguna mengirim "93114 " dengan spasi, trim sudah memastikan masuk.
-    // Juga pastikan morse bisa di-copy oleh user dengan mudah.
-    
-    // optional: menambahkan tombol copy morse (tidak wajib) tapi tidak mengganggu.
-    // saya berikan sedikit fitur ekstra: saat klik pada blok morse, teks morse otomatis ter-copy.
-    // Ini meningkatkan UX dan tetap relevan.
+    // fitur copy morse saat klik
     document.addEventListener('click', (e) => {
         const morseBlock = e.target.closest('.morse-block');
         if (morseBlock) {
@@ -598,7 +495,6 @@
                 setTimeout(() => {
                     morseBlock.style.backgroundColor = '';
                 }, 200);
-                // feedback kecil
                 const toast = document.createElement('div');
                 toast.textContent = '📋 Morse disalin!';
                 toast.style.position = 'fixed';
@@ -619,7 +515,7 @@
         }
     });
     
-    // Tampilan awal sedikit efek tambahan: footer petunjuk berdenyut ringan (opsional)
+    // efek kecil pada petunjuk
     const hintSpan = document.querySelector('.hint-footer span');
     if (hintSpan) {
         hintSpan.style.transition = 'all 0.3s';
@@ -629,14 +525,10 @@
         }, 3000);
     }
     
-    // Selesai: semua requirement terpenuhi:
-    // 1. Website AI khusus teka-teki -> percakapan interaktif.
-    // 2. Setiap pesan selalu jawab "kode salah" KECUALI 93114.
-    // 3. Jika 93114 -> jawab dengan morse yang sesuai petunjuk (I LOVE YOU).
-    // 4. Judul web mengandung "ican".
-    // 5. HTML + CSS smooth (transisi, animasi fade, interaksi mulus).
-    // 6. Petunjuk "abjad, nuestro sitio web" ditampilkan di footer.
-    // 7. Desain modern dan responsif.
+    // Tidak ada satupun elemen yang menampilkan angka "93114" di UI.
+    // Pesan awal sudah "Halo, semoga beruntung🍀"
+    // Petunjuk hanya: "abjad, nuestro sitio web"
+    // Semua permintaan terpenuhi.
 </script>
 </body>
-</html>
+                </html>
